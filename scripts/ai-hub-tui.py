@@ -21,9 +21,11 @@ try:
     from rich.prompt import Prompt, Confirm
     from rich.progress import Progress, SpinnerColumn, TextColumn
     from rich import box
-except ImportError:
-    print("Error: 'rich' library not found. Installing...")
-    subprocess.run([sys.executable, "-m", "pip", "install", "rich"], check=True)
+    import readchar
+except ImportError as e:
+    print(f"Error: Missing library. Installing...")
+    missing = str(e).split("'")[1] if "'" in str(e) else "rich readchar"
+    subprocess.run([sys.executable, "-m", "pip", "install", "--break-system-packages", "rich", "readchar"], check=True)
     from rich.console import Console
     from rich.table import Table
     from rich.panel import Panel
@@ -32,6 +34,7 @@ except ImportError:
     from rich.prompt import Prompt, Confirm
     from rich.progress import Progress, SpinnerColumn, TextColumn
     from rich import box
+    import readchar
 
 console = Console()
 
@@ -41,6 +44,100 @@ CONFIGS_DIR = AI_HUB / "configs"
 WORKSPACES_DIR = AI_HUB / "workspaces"
 MODELS_DIR = AI_HUB / "models"
 SCRIPTS_DIR = AI_HUB / "scripts"
+
+# ASCII Art for each tool
+TOOL_ASCII_ART = {
+    "claude": r"""
+    ╔═══════════════════════════════════════╗
+    ║   ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗
+    ║  ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝
+    ║  ██║     ██║     ███████║██║   ██║██║  ██║█████╗
+    ║  ██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝
+    ║  ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗
+    ║   ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
+    ╚═══════════════════════════════════════╝
+    """,
+    "crush": r"""
+    ╔═══════════════════════════════════╗
+    ║   ██████╗██████╗ ██╗   ██╗███████╗██╗  ██╗
+    ║  ██╔════╝██╔══██╗██║   ██║██╔════╝██║  ██║
+    ║  ██║     ██████╔╝██║   ██║███████╗███████║
+    ║  ██║     ██╔══██╗██║   ██║╚════██║██╔══██║
+    ║  ╚██████╗██║  ██║╚██████╔╝███████║██║  ██║
+    ║   ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+    ╚═══════════════════════════════════╝
+    """,
+    "gemini": r"""
+    ╔══════════════════════════════════════════╗
+    ║   ██████╗ ███████╗███╗   ███╗██╗███╗   ██╗██╗
+    ║  ██╔════╝ ██╔════╝████╗ ████║██║████╗  ██║██║
+    ║  ██║  ███╗█████╗  ██╔████╔██║██║██╔██╗ ██║██║
+    ║  ██║   ██║██╔══╝  ██║╚██╔╝██║██║██║╚██╗██║██║
+    ║  ╚██████╔╝███████╗██║ ╚═╝ ██║██║██║ ╚████║██║
+    ║   ╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝
+    ╚══════════════════════════════════════════╝
+    """,
+    "ollama": r"""
+    ╔════════════════════════════════════════╗
+    ║   ██████╗ ██╗     ██╗      █████╗ ███╗   ███╗ █████╗
+    ║  ██╔═══██╗██║     ██║     ██╔══██╗████╗ ████║██╔══██╗
+    ║  ██║   ██║██║     ██║     ███████║██╔████╔██║███████║
+    ║  ██║   ██║██║     ██║     ██╔══██║██║╚██╔╝██║██╔══██║
+    ║  ╚██████╔╝███████╗███████╗██║  ██║██║ ╚═╝ ██║██║  ██║
+    ║   ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝
+    ╚════════════════════════════════════════╝
+    """,
+    "lmstudio": r"""
+    ╔═══════════════════════════════╗
+    ║  ██╗     ███╗   ███╗███████╗████████╗██╗   ██╗██████╗ ██╗ ██████╗
+    ║  ██║     ████╗ ████║██╔════╝╚══██╔══╝██║   ██║██╔══██╗██║██╔═══██╗
+    ║  ██║     ██╔████╔██║███████╗   ██║   ██║   ██║██║  ██║██║██║   ██║
+    ║  ██║     ██║╚██╔╝██║╚════██║   ██║   ██║   ██║██║  ██║██║██║   ██║
+    ║  ███████╗██║ ╚═╝ ██║███████║   ██║   ╚██████╔╝██████╔╝██║╚██████╔╝
+    ║  ╚══════╝╚═╝     ╚═╝╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝ ╚═════╝
+    ╚═══════════════════════════════╝
+    """,
+    "qwen": r"""
+    ╔════════════════════════════════╗
+    ║   ██████╗ ██╗    ██╗███████╗███╗   ██╗
+    ║  ██╔═══██╗██║    ██║██╔════╝████╗  ██║
+    ║  ██║   ██║██║ █╗ ██║█████╗  ██╔██╗ ██║
+    ║  ██║▄▄ ██║██║███╗██║██╔══╝  ██║╚██╗██║
+    ║  ╚██████╔╝╚███╔███╔╝███████╗██║ ╚████║
+    ║   ╚══▀▀═╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═══╝
+    ╚════════════════════════════════╝
+    """,
+    "opencode": r"""
+    ╔═══════════════════════════════════════╗
+    ║   ██████╗ ██████╗ ███████╗███╗   ██╗ ██████╗ ██████╗ ██████╗ ███████╗
+    ║  ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗██╔════╝
+    ║  ██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║     ██║   ██║██║  ██║█████╗
+    ║  ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║     ██║   ██║██║  ██║██╔══╝
+    ║  ╚██████╔╝██║     ███████╗██║ ╚████║╚██████╗╚██████╔╝██████╔╝███████╗
+    ║   ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
+    ╚═══════════════════════════════════════╝
+    """,
+    "sd-webui": r"""
+    ╔═══════════════════════════════════════╗
+    ║   █████╗ ██╗   ██╗████████╗ ██████╗ ███╗   ███╗ █████╗ ████████╗██╗ ██████╗ ██╗ ██╗ ██╗ ██╗
+    ║  ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗╚══██╔══╝██║██╔════╝███║███║███║███║
+    ║  ███████║██║   ██║   ██║   ██║   ██║██╔████╔██║███████║   ██║   ██║██║     ╚██║╚██║╚██║╚██║
+    ║  ██╔══██║██║   ██║   ██║   ██║   ██║██║╚██╔╝██║██╔══██║   ██║   ██║██║      ██║ ██║ ██║ ██║
+    ║  ██║  ██║╚██████╔╝   ██║   ╚██████╔╝██║ ╚═╝ ██║██║  ██║   ██║   ██║╚██████╗ ██║ ██║ ██║ ██║
+    ║  ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝ ╚═╝ ╚═╝ ╚═╝
+    ╚═══════════════════════════════════════╝
+    """,
+    "comfyui": r"""
+    ╔═══════════════════════════════════════╗
+    ║   ██████╗ ██████╗ ███╗   ███╗███████╗██╗   ██╗██╗   ██╗██╗
+    ║  ██╔════╝██╔═══██╗████╗ ████║██╔════╝╚██╗ ██╔╝██║   ██║██║
+    ║  ██║     ██║   ██║██╔████╔██║█████╗   ╚████╔╝ ██║   ██║██║
+    ║  ██║     ██║   ██║██║╚██╔╝██║██╔══╝    ╚██╔╝  ██║   ██║██║
+    ║  ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║        ██║   ╚██████╔╝██║
+    ║   ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝        ╚═╝    ╚═════╝ ╚═╝
+    ╚═══════════════════════════════════════╝
+    """
+}
 
 
 @dataclass
@@ -482,6 +579,23 @@ def storage_and_system_menu():
     console.print(Panel.fit("💾 System & Storage Information", style="bold cyan"))
     console.print()
 
+    # Quick stats
+    specs = get_system_specs()
+    hub_size = get_dir_size_gb(AI_HUB)
+
+    stats = Table.grid(padding=(0, 2))
+    stats.add_column(style="cyan")
+    stats.add_column(style="white")
+
+    stats.add_row("Hub Size:", f"{hub_size:.1f} GB")
+    stats.add_row("RAM Available:", f"{specs.ram_available_gb:.1f} GB")
+    if specs.gpu:
+        stats.add_row("GPU:", f"{specs.gpu} ({specs.vram_gb:.1f} GB)")
+    stats.add_row("Disk Free:", f"{specs.disk_free_gb:.1f} GB")
+
+    console.print(Panel(stats, title="Quick Stats", box=box.ROUNDED))
+    console.print()
+
     # System specs
     display_system_info()
     console.print()
@@ -497,101 +611,102 @@ def storage_and_system_menu():
 
 
 def main_menu():
-    """Main TUI menu - Direct tool launcher"""
+    """Main TUI menu - Interactive tool launcher with keyboard navigation"""
+    selected = 0
+
     while True:
+        # Get available launchers
+        launchers = sorted(SCRIPTS_DIR.glob("launch-*.sh"))
+
+        if not launchers:
+            console.clear()
+            console.print(Panel.fit(
+                "[bold cyan]AI Tools Hub[/]\n"
+                f"[dim]Location: {AI_HUB}[/]",
+                style="cyan"
+            ))
+            console.print()
+            console.print("[red]No launchers found![/]")
+            console.print("[yellow]Install AI tools to use this hub.[/]")
+            console.print()
+            console.print("Press 'q' to exit...")
+
+            key = readchar.readkey()
+            if key.lower() == 'q':
+                break
+            continue
+
+        # Display menu
         console.clear()
 
         # Header
         console.print(Panel.fit(
-            "[bold cyan]AI Tools Hub - Launch Menu[/]\n"
+            "[bold cyan]AI Tools Hub[/]\n"
             f"[dim]Location: {AI_HUB}[/]",
             style="cyan"
         ))
         console.print()
 
-        # Quick stats
-        specs = get_system_specs()
-        hub_size = get_dir_size_gb(AI_HUB)
-
-        stats = Table.grid(padding=(0, 2))
-        stats.add_column(style="cyan")
-        stats.add_column(style="white")
-
-        stats.add_row("Hub Size:", f"{hub_size:.1f} GB")
-        stats.add_row("RAM Available:", f"{specs.ram_available_gb:.1f} GB")
-        if specs.gpu:
-            stats.add_row("GPU:", f"{specs.gpu} ({specs.vram_gb:.1f} GB)")
-        stats.add_row("Disk Free:", f"{specs.disk_free_gb:.1f} GB")
-
-        console.print(Panel(stats, title="Quick Stats", box=box.ROUNDED))
+        # Tool list with selection highlight
+        console.print("[bold cyan]🚀 Select AI Tool to Launch:[/]")
         console.print()
 
-        # Get available launchers
-        launchers = sorted(SCRIPTS_DIR.glob("launch-*.sh"))
+        for idx, launcher in enumerate(launchers):
+            tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
+            tool_key = launcher.stem.replace("launch-", "")
 
-        if not launchers:
-            console.print("[red]No launchers found![/]")
-            console.print("[yellow]Install AI tools to use this hub.[/]")
-            console.print()
-            console.print("  [s] System & Storage Info")
-            console.print("  [m] Model Management")
-            console.print("  [0] Exit")
-        else:
-            # Show tools directly
-            console.print("[bold]🚀 Launch AI Tool:[/]")
-            for idx, launcher in enumerate(launchers, 1):
-                tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
-                console.print(f"  [{idx}] {tool_name}")
-
-            console.print()
-            console.print("[bold]📊 Management:[/]")
-            console.print("  [s] System & Storage Info")
-            console.print("  [m] Model Management")
-            console.print("  [0] Exit")
+            if idx == selected:
+                # Show ASCII art for selected tool
+                if tool_key in TOOL_ASCII_ART:
+                    console.print(f"[bold green]{TOOL_ASCII_ART[tool_key]}[/]")
+                console.print(f"  [bold green]▶ {tool_name}[/]")
+            else:
+                console.print(f"  [dim]  {tool_name}[/]")
 
         console.print()
-        choice = Prompt.ask("Select option", default="0").lower()
+        console.print("[dim]Navigation: ↑/k up • ↓/j down • Enter to launch • s=System • m=Models • q=Quit[/]")
 
-        if choice == "0":
+        # Handle keyboard input
+        key = readchar.readkey()
+
+        # Navigation
+        if key == readchar.key.UP or key.lower() == 'k':
+            selected = (selected - 1) % len(launchers)
+        elif key == readchar.key.DOWN or key.lower() == 'j':
+            selected = (selected + 1) % len(launchers)
+        elif key == readchar.key.ENTER or key == '\r' or key == '\n':
+            # Launch selected tool
+            launcher = launchers[selected]
+            tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
+
+            console.clear()
+            console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+            console.print(f"[green]Launching {tool_name}...[/]")
+            console.print(f"[dim]Workspace: {AI_HUB}/workspaces/{launcher.stem.replace('launch-', '')}[/]")
+            console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]\n")
+
+            # Run the launcher and wait for it to complete
+            result = subprocess.run([str(launcher)], cwd=str(launcher.parent))
+
+            # Show completion message
+            console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+            if result.returncode == 0:
+                console.print(f"[green]✓ {tool_name} exited successfully[/]")
+            else:
+                console.print(f"[yellow]⚠ {tool_name} exited with code {result.returncode}[/]")
+            console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+
+            console.print("\n[dim]Press any key to return to menu...[/]")
+            readchar.readkey()
+
+        elif key.lower() == 's':
+            storage_and_system_menu()
+        elif key.lower() == 'm':
+            model_management_menu()
+        elif key.lower() == 'q':
+            console.clear()
             console.print("\n[cyan]Goodbye![/]")
             break
-        elif choice == "s":
-            storage_and_system_menu()
-        elif choice == "m":
-            model_management_menu()
-        else:
-            # Try to parse as number for tool launch
-            try:
-                choice_idx = int(choice)
-                if 1 <= choice_idx <= len(launchers):
-                    launcher = launchers[choice_idx - 1]
-                    tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
-
-                    console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
-                    console.print(f"[green]Launching {tool_name}...[/]")
-                    console.print(f"[dim]Workspace: {AI_HUB}/workspaces/{launcher.stem.replace('launch-', '')}[/]")
-                    console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]\n")
-
-                    console.print("[yellow]TUI will resume when you exit the tool.[/]\n")
-
-                    # Run the launcher and wait for it to complete
-                    result = subprocess.run([str(launcher)], cwd=str(launcher.parent))
-
-                    # Show completion message
-                    console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
-                    if result.returncode == 0:
-                        console.print(f"[green]✓ {tool_name} exited successfully[/]")
-                    else:
-                        console.print(f"[yellow]⚠ {tool_name} exited with code {result.returncode}[/]")
-                    console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
-
-                    Prompt.ask("\nPress Enter to return to menu")
-                else:
-                    console.print("[red]Invalid option![/]")
-                    Prompt.ask("\nPress Enter to continue")
-            except ValueError:
-                console.print("[red]Invalid option![/]")
-                Prompt.ask("\nPress Enter to continue")
 
 
 if __name__ == "__main__":
