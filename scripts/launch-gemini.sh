@@ -1,8 +1,8 @@
 #!/bin/bash
-# Launch Gemini CLI with AI hub context
+# Launch Gemini CLI from AI Hub
 
 cd "$HOME/Projects/ai/workspaces/gemini"
 source "$HOME/Projects/ai/scripts/load-env.sh"
 
-# Gemini CLI with workspace context
-gemini --workspace "$HOME/Projects/ai/workspaces/gemini" "$@"
+# Launch Gemini CLI
+exec gemini "$@"
