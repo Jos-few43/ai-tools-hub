@@ -1,0 +1,4 @@
+#!/bin/bash
+# AI Hub TUI - Quick launcher
+
+exec python3 "$HOME/Projects/ai/scripts/ai-hub-tui.py" "$@"

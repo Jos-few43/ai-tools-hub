@@ -1,0 +1,90 @@
+# AI Hub - Git Ignore File
+
+# Sensitive files - NEVER commit these!
+configs/.env
+configs/.claude/settings.local.json
+configs/**/*.key
+configs/**/*.pem
+configs/**/credentials*.json
+configs/**/oauth*.json
+**/secrets/
+
+# API Keys and tokens
+.env
+.env.local
+*.key
+*.pem
+
+# AI Models - Too large for git
+models/**/*.safetensors
+models/**/*.ckpt
+models/**/*.pt
+models/**/*.pth
+models/**/*.gguf
+models/**/*.bin
+stable-diffusion-webui/models/**/*.safetensors
+
+# Python
+configs/.venv/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Tool-specific data
+configs/.claude/debug/
+configs/.claude/file-history/
+configs/.claude/plans/
+configs/.claude/todos/
+configs/.gemini/tmp/
+configs/.ollama/
+configs/.lmstudio/.internal/
+configs/.qwen/tmp/
+configs/.crush/cache/
+
+# Workspaces - User-specific content
+workspaces/*/
+!workspaces/.gitkeep
+
+# Stable Diffusion WebUI
+stable-diffusion-webui/models/
+stable-diffusion-webui/outputs/
+stable-diffusion-webui/venv/
+stable-diffusion-webui/.cache/
+stable-diffusion-webui/__pycache__/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+cache/
+
+# Keep directory structure
+!.gitkeep
+!models/.gitkeep
+!models/checkpoints/.gitkeep
+!models/loras/.gitkeep
+!models/vae/.gitkeep
+!models/embeddings/.gitkeep
+!workspaces/.gitkeep
