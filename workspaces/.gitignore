@@ -1,0 +1,5 @@
+# Ignore all workspace contents
+*
+
+# But track the structure
+!.gitignore

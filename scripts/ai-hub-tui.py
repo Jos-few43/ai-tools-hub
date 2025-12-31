@@ -103,7 +103,7 @@ TOOL_ASCII_ART = {
     ║  ╚██████╔╝██║     ███████╗██║ ╚████║╚██████╗╚██████╔╝██████╔╝███████╗
     ║   ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
     ╚═══════════════════════════════════════╝[/]""",
-    "sd-webui": """[bold #FF6B35]    ╔═══════════════════════════════════════╗
+    "automatic1111": """[bold #FF6B35]    ╔═══════════════════════════════════════╗
     ║   █████╗ ██╗   ██╗████████╗ ██████╗ ███╗   ███╗ █████╗ ████████╗██╗ ██████╗ ██╗ ██╗ ██╗ ██╗
     ║  ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗╚══██╔══╝██║██╔════╝███║███║███║███║
     ║  ███████║██║   ██║   ██║   ██║   ██║██╔████╔██║███████║   ██║   ██║██║     ╚██║╚██║╚██║╚██║
@@ -670,40 +670,65 @@ def cleanup_models_menu():
 
 
 def storage_and_system_menu():
-    """Combined storage breakdown and system information"""
+    """Combined storage breakdown and system information - compact one-screen view"""
     console.clear()
-    console.print(Panel.fit("💾 System & Storage Information", style="bold cyan"))
+    console.print(Panel.fit(f"[bold {THEME['primary']}]💾 System & Storage Information[/]", style=THEME['primary'], border_style=THEME['border']))
     console.print()
 
-    # Quick stats
     specs = get_system_specs()
     hub_size = get_dir_size_gb(AI_HUB)
 
-    stats = Table.grid(padding=(0, 2))
-    stats.add_column(style="cyan")
-    stats.add_column(style="white")
+    # Left column: System specs
+    sys_table = Table.grid(padding=(0, 1))
+    sys_table.add_column(style=THEME['accent'])
+    sys_table.add_column(style="white")
 
-    stats.add_row("Hub Size:", f"{hub_size:.1f} GB")
-    stats.add_row("RAM Available:", f"{specs.ram_available_gb:.1f} GB")
+    sys_table.add_row(f"[{THEME['accent']}]CPU:[/]", specs.cpu)
+    sys_table.add_row(f"[{THEME['accent']}]Cores:[/]", str(specs.cpu_cores))
+    sys_table.add_row(f"[{THEME['accent']}]RAM:[/]", f"{specs.ram_available_gb:.1f}/{specs.ram_total_gb:.1f} GB")
     if specs.gpu:
-        stats.add_row("GPU:", f"{specs.gpu} ({specs.vram_gb:.1f} GB)")
-    stats.add_row("Disk Free:", f"{specs.disk_free_gb:.1f} GB")
+        sys_table.add_row(f"[{THEME['accent']}]GPU:[/]", f"{specs.gpu}")
+        sys_table.add_row(f"[{THEME['accent']}]VRAM:[/]", f"{specs.vram_gb:.1f} GB")
+    sys_table.add_row(f"[{THEME['accent']}]Disk:[/]", f"{specs.disk_free_gb:.1f} GB free")
 
-    console.print(Panel(stats, title="Quick Stats", box=box.ROUNDED))
-    console.print()
+    # Middle column: Storage breakdown
+    storage_table = Table.grid(padding=(0, 1))
+    storage_table.add_column(style=THEME['accent'])
+    storage_table.add_column(style="white", justify="right")
 
-    # System specs
-    display_system_info()
-    console.print()
+    storage_table.add_row(f"[{THEME['accent']}]Hub Total:[/]", f"{hub_size:.1f} GB")
 
-    # Storage breakdown
-    display_storage()
-    console.print()
+    # Calculate major directories
+    models_size = get_dir_size_gb(MODELS_DIR) if MODELS_DIR.exists() else 0
+    workspaces_size = get_dir_size_gb(WORKSPACES_DIR) if WORKSPACES_DIR.exists() else 0
+    configs_size = get_dir_size_gb(CONFIGS_DIR) if CONFIGS_DIR.exists() else 0
 
-    # Tool status
-    display_tool_status()
+    storage_table.add_row(f"[{THEME['muted']}]Models:[/]", f"{models_size:.1f} GB")
+    storage_table.add_row(f"[{THEME['muted']}]Workspaces:[/]", f"{workspaces_size:.1f} GB")
+    storage_table.add_row(f"[{THEME['muted']}]Configs:[/]", f"{configs_size:.1f} GB")
 
-    Prompt.ask("\nPress Enter to continue")
+    # Right column: Tool status (compact)
+    tool_table = Table.grid(padding=(0, 1))
+    tool_table.add_column(style=THEME['accent'])
+    tool_table.add_column(style="white", justify="center")
+
+    launchers = list(SCRIPTS_DIR.glob("launch-*.sh"))
+    tool_table.add_row(f"[{THEME['accent']}]Tools:[/]", str(len(launchers)))
+
+    # Count models
+    models_path = MODELS_DIR / "checkpoints"
+    model_count = len(list(models_path.glob("*.safetensors"))) if models_path.exists() else 0
+    tool_table.add_row(f"[{THEME['accent']}]Models:[/]", str(model_count))
+
+    # Display in columns
+    from rich.columns import Columns
+    sys_panel = Panel(sys_table, title="Hardware", border_style=THEME['border'])
+    storage_panel = Panel(storage_table, title="Storage", border_style=THEME['border'])
+    tool_panel = Panel(tool_table, title="Stats", border_style=THEME['border'])
+
+    console.print(Columns([sys_panel, storage_panel, tool_panel], equal=True, expand=True))
+
+    Prompt.ask(f"\n[{THEME['muted']}]Press Enter to continue[/]")
 
 
 def theme_selector_menu():
@@ -803,21 +828,46 @@ def main_menu():
         ))
         console.print()
 
-        # Tool list with selection highlight
-        console.print(f"[bold {THEME['accent']}]🚀 Select AI Tool to Launch:[/]")
-        console.print()
+        # Create layout with ASCII art in center and info panel on right
+        from rich.columns import Columns
 
+        # Build tool list for left
+        tool_list_text = f"[bold {THEME['accent']}]🚀 AI Tools[/]\n\n"
         for idx, launcher in enumerate(launchers):
             tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
-            tool_key = launcher.stem.replace("launch-", "")
-
             if idx == selected:
-                # Show ASCII art for selected tool
-                if tool_key in TOOL_ASCII_ART:
-                    console.print(TOOL_ASCII_ART[tool_key])
-                console.print(f"  [bold {THEME['success']}]▶ {tool_name}[/]")
+                tool_list_text += f"[bold {THEME['success']}]▶ {tool_name}[/]\n"
             else:
-                console.print(f"  [{THEME['muted']}]  {tool_name}[/]")
+                tool_list_text += f"[{THEME['muted']}]  {tool_name}[/]\n"
+
+        # Get selected tool info
+        selected_launcher = launchers[selected]
+        selected_tool_name = selected_launcher.stem.replace("launch-", "").replace("-", " ").title()
+        selected_tool_key = selected_launcher.stem.replace("launch-", "")
+
+        # ASCII art in center
+        ascii_text = ""
+        if selected_tool_key in TOOL_ASCII_ART:
+            ascii_text = TOOL_ASCII_ART[selected_tool_key]
+
+        # Build info panel for right
+        info_text = f"[bold {THEME['accent']}]{selected_tool_name}[/]\n\n"
+        workspace = WORKSPACES_DIR / selected_tool_key
+        if workspace.exists():
+            info_text += f"[{THEME['muted']}]Workspace:[/]\n{workspace}\n\n"
+            # Check for recent files/activity
+            recent_files = list(workspace.glob("*"))[:3] if workspace.exists() else []
+            if recent_files:
+                info_text += f"[{THEME['muted']}]Recent:[/]\n"
+                for f in recent_files:
+                    info_text += f"  {f.name}\n"
+
+        # Display in columns: tool list (narrow), ASCII (wide), info (medium)
+        tool_panel = Panel(tool_list_text, border_style=THEME['border'], width=25)
+        ascii_panel = Panel(ascii_text, border_style=THEME['border'], expand=True)
+        info_panel = Panel(info_text, border_style=THEME['border'], width=40)
+
+        console.print(Columns([tool_panel, ascii_panel, info_panel], expand=True))
 
         console.print()
         console.print(f"[{THEME['muted']}]Navigation: [{THEME['primary']}]↑/k[/] up • [{THEME['primary']}]↓/j[/] down • [{THEME['primary']}]Enter[/] launch • [{THEME['warning']}]s[/]=System • [{THEME['warning']}]m[/]=Models • [{THEME['warning']}]t[/]=Theme • [{THEME['error']}]q[/]=Quit[/]")

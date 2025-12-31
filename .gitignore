@@ -88,3 +88,4 @@ cache/
 !models/vae/.gitkeep
 !models/embeddings/.gitkeep
 !workspaces/.gitkeep
+stable-diffusion-webui/

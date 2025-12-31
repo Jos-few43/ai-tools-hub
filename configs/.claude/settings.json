@@ -1,0 +1,83 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gemini-cli:*)",
+      "Bash(openai:*)",
+      "Bash(grok-cli:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/yish/Projects/claude-workspace/.claude/hooks-scripts/session-init.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/yish/Projects/claude-workspace/.claude/hooks-scripts/analyze-intent.sh \"$PROMPT\"",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "gemini_research|codex_generate|grok_realtime",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/yish/Projects/claude-workspace/.claude/hooks-scripts/detect-secrets.sh \"$TOOL\" \"$PARAMS\"",
+            "timeout": 2000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/yish/Projects/claude-workspace/.claude/hooks-scripts/post-edit-format.sh \"$TOOL\" \"$FILE\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "gemini-research|ollama-codereview|codex-generator|grok-realtime",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/yish/Projects/claude-workspace/.claude/hooks-scripts/subagent-report.sh \"$AGENT\" \"$DURATION\" \"$TOKENS\"",
+            "timeout": 2000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/yish/Projects/claude-workspace/.claude/hooks-scripts/session-summary.sh",
+            "timeout": 3000
+          }
+        ]
+      }
+    ]
+  }
+}
