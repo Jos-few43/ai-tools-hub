@@ -121,6 +121,120 @@ TOOL_ASCII_ART = {
     ╚═══════════════════════════════════════╝[/]"""
 }
 
+# Theme color mappings
+THEMES = {
+    "tokyonight": {
+        "primary": "#7AA2F7",
+        "accent": "#BB9AF7",
+        "success": "#9ECE6A",
+        "warning": "#E0AF68",
+        "error": "#F7768E",
+        "muted": "#565F89",
+        "border": "#414868"
+    },
+    "gruvbox": {
+        "primary": "#83A598",
+        "accent": "#D3869B",
+        "success": "#B8BB26",
+        "warning": "#FABD2F",
+        "error": "#FB4934",
+        "muted": "#928374",
+        "border": "#504945"
+    },
+    "catppuccin": {
+        "primary": "#89B4FA",
+        "accent": "#CBA6F7",
+        "success": "#A6E3A1",
+        "warning": "#F9E2AF",
+        "error": "#F38BA8",
+        "muted": "#6C7086",
+        "border": "#45475A"
+    },
+    "nord": {
+        "primary": "#88C0D0",
+        "accent": "#B48EAD",
+        "success": "#A3BE8C",
+        "warning": "#EBCB8B",
+        "error": "#BF616A",
+        "muted": "#4C566A",
+        "border": "#3B4252"
+    },
+    "ansi": {
+        "primary": "blue",
+        "accent": "magenta",
+        "success": "green",
+        "warning": "yellow",
+        "error": "red",
+        "muted": "bright_black",
+        "border": "bright_black"
+    }
+}
+
+def detect_vim_theme() -> str:
+    """Detect vim/nvim colorscheme from config files"""
+
+    # Check nvim config first
+    nvim_paths = [
+        Path.home() / ".config/nvim/lua/config/lazy.lua",
+        Path.home() / ".config/nvim/init.lua",
+        Path.home() / ".config/nvim/init.vim",
+        Path.home() / ".vimrc"
+    ]
+
+    for config_path in nvim_paths:
+        if not config_path.exists():
+            continue
+
+        try:
+            content = config_path.read_text()
+
+            # Look for common theme names
+            for theme in ["tokyonight", "gruvbox", "catppuccin", "nord"]:
+                if theme in content.lower():
+                    return theme
+        except:
+            continue
+
+    return "ansi"  # Fallback to ANSI colors
+
+def load_theme_config() -> str:
+    """Load theme preference from config file"""
+    config_file = CONFIGS_DIR / "tui-theme.conf"
+
+    if config_file.exists():
+        try:
+            theme = config_file.read_text().strip()
+            if theme in THEMES:
+                return theme
+        except:
+            pass
+
+    return None
+
+def save_theme_config(theme: str):
+    """Save theme preference to config file"""
+    config_file = CONFIGS_DIR / "tui-theme.conf"
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    config_file.write_text(theme)
+
+def get_active_theme() -> Dict[str, str]:
+    """Get the active theme colors"""
+    # 1. Check user config
+    user_theme = load_theme_config()
+    if user_theme:
+        return THEMES[user_theme]
+
+    # 2. Try to detect vim theme
+    detected_theme = detect_vim_theme()
+    if detected_theme in THEMES:
+        return THEMES[detected_theme]
+
+    # 3. Fallback to ANSI
+    return THEMES["ansi"]
+
+# Initialize theme
+THEME = get_active_theme()
+
 
 @dataclass
 class SystemSpecs:
@@ -592,6 +706,65 @@ def storage_and_system_menu():
     Prompt.ask("\nPress Enter to continue")
 
 
+def theme_selector_menu():
+    """Interactive theme selector"""
+    global THEME
+
+    current_theme_name = load_theme_config() or detect_vim_theme()
+
+    while True:
+        console.clear()
+        console.print(Panel.fit(f"[bold {THEME['primary']}]🎨 Theme Selector[/]", style=THEME['primary'], border_style=THEME['border']))
+        console.print()
+
+        # Show available themes
+        theme_list = list(THEMES.keys())
+        console.print(f"[{THEME['accent']}]Available Themes:[/]")
+        console.print()
+
+        for idx, theme_name in enumerate(theme_list, 1):
+            marker = "●" if theme_name == current_theme_name else "○"
+            status = "(active)" if theme_name == current_theme_name else ""
+
+            # Show theme preview
+            theme = THEMES[theme_name]
+            console.print(f"  [{idx}] {marker} [bold]{theme_name.title()}[/] {status}")
+            console.print(f"      [{theme['primary']}]█[/][{theme['accent']}]█[/][{theme['success']}]█[/][{theme['warning']}]█[/][{theme['error']}]█[/]")
+
+        console.print()
+        console.print(f"[{THEME['muted']}]Current: [bold]{current_theme_name.title()}[/] (detected from vim config)" if not load_theme_config() else f"[{THEME['muted']}]Current: [bold]{current_theme_name.title()}[/] (manually selected)")
+        console.print()
+        console.print(f"[{THEME['muted']}]Select theme number or [{THEME['primary']}]r[/]=Reset to auto-detect • [{THEME['error']}]q[/]=Back[/]")
+
+        key = readchar.readkey()
+
+        if key.lower() == 'q':
+            break
+        elif key.lower() == 'r':
+            # Reset to auto-detect
+            config_file = CONFIGS_DIR / "tui-theme.conf"
+            if config_file.exists():
+                config_file.unlink()
+            THEME = get_active_theme()
+            current_theme_name = detect_vim_theme()
+            console.print(f"\n[{THEME['success']}]✓ Theme reset to auto-detect ({current_theme_name})[/]")
+            import time
+            time.sleep(1)
+        else:
+            try:
+                choice = int(key)
+                if 1 <= choice <= len(theme_list):
+                    selected_theme = theme_list[choice - 1]
+                    save_theme_config(selected_theme)
+                    THEME = THEMES[selected_theme]
+                    current_theme_name = selected_theme
+                    console.print(f"\n[{THEME['success']}]✓ Theme changed to {selected_theme.title()}[/]")
+                    import time
+                    time.sleep(1)
+            except ValueError:
+                pass
+
+
 def main_menu():
     """Main TUI menu - Interactive tool launcher with keyboard navigation"""
     selected = 0
@@ -621,17 +794,17 @@ def main_menu():
         # Display menu
         console.clear()
 
-        # Header with tokyonight-inspired colors
+        # Header with theme colors
         console.print(Panel.fit(
-            "[bold #7AA2F7]AI Tools Hub[/]\n"
-            f"[#565F89]Location: {AI_HUB}[/]",
-            style="#7AA2F7",
-            border_style="#414868"
+            f"[bold {THEME['primary']}]AI Tools Hub[/]\n"
+            f"[{THEME['muted']}]Location: {AI_HUB}[/]",
+            style=THEME['primary'],
+            border_style=THEME['border']
         ))
         console.print()
 
         # Tool list with selection highlight
-        console.print("[bold #BB9AF7]🚀 Select AI Tool to Launch:[/]")
+        console.print(f"[bold {THEME['accent']}]🚀 Select AI Tool to Launch:[/]")
         console.print()
 
         for idx, launcher in enumerate(launchers):
@@ -642,12 +815,12 @@ def main_menu():
                 # Show ASCII art for selected tool
                 if tool_key in TOOL_ASCII_ART:
                     console.print(TOOL_ASCII_ART[tool_key])
-                console.print(f"  [bold #9ECE6A]▶ {tool_name}[/]")
+                console.print(f"  [bold {THEME['success']}]▶ {tool_name}[/]")
             else:
-                console.print(f"  [#565F89]  {tool_name}[/]")
+                console.print(f"  [{THEME['muted']}]  {tool_name}[/]")
 
         console.print()
-        console.print("[#565F89]Navigation: [#7AA2F7]↑/k[/] up • [#7AA2F7]↓/j[/] down • [#7AA2F7]Enter[/] launch • [#E0AF68]s[/]=System • [#E0AF68]m[/]=Models • [#F7768E]q[/]=Quit[/]")
+        console.print(f"[{THEME['muted']}]Navigation: [{THEME['primary']}]↑/k[/] up • [{THEME['primary']}]↓/j[/] down • [{THEME['primary']}]Enter[/] launch • [{THEME['warning']}]s[/]=System • [{THEME['warning']}]m[/]=Models • [{THEME['warning']}]t[/]=Theme • [{THEME['error']}]q[/]=Quit[/]")
 
         # Handle keyboard input
         key = readchar.readkey()
@@ -663,32 +836,34 @@ def main_menu():
             tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
 
             console.clear()
-            console.print(f"[#7AA2F7]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
-            console.print(f"[#9ECE6A]Launching {tool_name}...[/]")
-            console.print(f"[#565F89]Workspace: {AI_HUB}/workspaces/{launcher.stem.replace('launch-', '')}[/]")
-            console.print(f"[#7AA2F7]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]\n")
+            console.print(f"[{THEME['primary']}]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+            console.print(f"[{THEME['success']}]Launching {tool_name}...[/]")
+            console.print(f"[{THEME['muted']}]Workspace: {AI_HUB}/workspaces/{launcher.stem.replace('launch-', '')}[/]")
+            console.print(f"[{THEME['primary']}]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]\n")
 
             # Run the launcher and wait for it to complete
             result = subprocess.run([str(launcher)], cwd=str(launcher.parent))
 
             # Show completion message
-            console.print(f"\n[#7AA2F7]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+            console.print(f"\n[{THEME['primary']}]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
             if result.returncode == 0:
-                console.print(f"[#9ECE6A]✓ {tool_name} exited successfully[/]")
+                console.print(f"[{THEME['success']}]✓ {tool_name} exited successfully[/]")
             else:
-                console.print(f"[#E0AF68]⚠ {tool_name} exited with code {result.returncode}[/]")
-            console.print(f"[#7AA2F7]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+                console.print(f"[{THEME['warning']}]⚠ {tool_name} exited with code {result.returncode}[/]")
+            console.print(f"[{THEME['primary']}]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
 
-            console.print("\n[#565F89]Press any key to return to menu...[/]")
+            console.print(f"\n[{THEME['muted']}]Press any key to return to menu...[/]")
             readchar.readkey()
 
         elif key.lower() == 's':
             storage_and_system_menu()
         elif key.lower() == 'm':
             model_management_menu()
+        elif key.lower() == 't':
+            theme_selector_menu()
         elif key.lower() == 'q':
             console.clear()
-            console.print("\n[#BB9AF7]Goodbye![/]")
+            console.print(f"\n[{THEME['accent']}]Goodbye![/]")
             break
 
 
