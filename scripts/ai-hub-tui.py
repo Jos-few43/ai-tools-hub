@@ -371,6 +371,7 @@ def launch_tool_menu():
 
     if not launchers:
         console.print("[red]No launchers found![/]")
+        Prompt.ask("\nPress Enter to continue")
         return
 
     for idx, launcher in enumerate(launchers, 1):
@@ -388,10 +389,31 @@ def launch_tool_menu():
             return
         if 1 <= choice_idx <= len(launchers):
             launcher = launchers[choice_idx - 1]
-            console.print(f"\n[green]Launching {launcher.stem}...[/]")
-            subprocess.run([str(launcher)])
+            tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
+
+            console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+            console.print(f"[green]Launching {tool_name}...[/]")
+            console.print(f"[dim]Script: {launcher}[/]")
+            console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]\n")
+
+            # Clear the console and run the tool
+            console.print("[yellow]TUI will resume when you exit the tool.[/]\n")
+
+            # Run the launcher and wait for it to complete
+            result = subprocess.run([str(launcher)], cwd=str(launcher.parent))
+
+            # Show completion message
+            console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+            if result.returncode == 0:
+                console.print(f"[green]✓ {tool_name} exited successfully[/]")
+            else:
+                console.print(f"[yellow]⚠ {tool_name} exited with code {result.returncode}[/]")
+            console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+
+            Prompt.ask("\nPress Enter to return to TUI")
     except (ValueError, IndexError):
         console.print("[red]Invalid choice![/]")
+        Prompt.ask("\nPress Enter to continue")
 
 
 def model_management_menu():
