@@ -361,61 +361,6 @@ def check_model_requirements(model_name: str) -> Tuple[bool, List[str]]:
     return len(issues) == 0, issues
 
 
-def launch_tool_menu():
-    """Interactive menu to launch tools"""
-    console.clear()
-    console.print(Panel.fit("🚀 Launch AI Tools", style="bold cyan"))
-    console.print()
-
-    launchers = sorted(SCRIPTS_DIR.glob("launch-*.sh"))
-
-    if not launchers:
-        console.print("[red]No launchers found![/]")
-        Prompt.ask("\nPress Enter to continue")
-        return
-
-    for idx, launcher in enumerate(launchers, 1):
-        tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
-        console.print(f"  [{idx}] {tool_name}")
-
-    console.print(f"  [0] Back to main menu")
-    console.print()
-
-    choice = Prompt.ask("Select tool to launch", default="0")
-
-    try:
-        choice_idx = int(choice)
-        if choice_idx == 0:
-            return
-        if 1 <= choice_idx <= len(launchers):
-            launcher = launchers[choice_idx - 1]
-            tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
-
-            console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
-            console.print(f"[green]Launching {tool_name}...[/]")
-            console.print(f"[dim]Script: {launcher}[/]")
-            console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]\n")
-
-            # Clear the console and run the tool
-            console.print("[yellow]TUI will resume when you exit the tool.[/]\n")
-
-            # Run the launcher and wait for it to complete
-            result = subprocess.run([str(launcher)], cwd=str(launcher.parent))
-
-            # Show completion message
-            console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
-            if result.returncode == 0:
-                console.print(f"[green]✓ {tool_name} exited successfully[/]")
-            else:
-                console.print(f"[yellow]⚠ {tool_name} exited with code {result.returncode}[/]")
-            console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
-
-            Prompt.ask("\nPress Enter to return to TUI")
-    except (ValueError, IndexError):
-        console.print("[red]Invalid choice![/]")
-        Prompt.ask("\nPress Enter to continue")
-
-
 def model_management_menu():
     """Interactive model management menu"""
     console.clear()
@@ -531,14 +476,34 @@ def cleanup_models_menu():
     Prompt.ask("Press Enter to continue")
 
 
+def storage_and_system_menu():
+    """Combined storage breakdown and system information"""
+    console.clear()
+    console.print(Panel.fit("💾 System & Storage Information", style="bold cyan"))
+    console.print()
+
+    # System specs
+    display_system_info()
+    console.print()
+
+    # Storage breakdown
+    display_storage()
+    console.print()
+
+    # Tool status
+    display_tool_status()
+
+    Prompt.ask("\nPress Enter to continue")
+
+
 def main_menu():
-    """Main TUI menu"""
+    """Main TUI menu - Direct tool launcher"""
     while True:
         console.clear()
 
         # Header
         console.print(Panel.fit(
-            "[bold cyan]AI Tools Hub - Management Console[/]\n"
+            "[bold cyan]AI Tools Hub - Launch Menu[/]\n"
             f"[dim]Location: {AI_HUB}[/]",
             style="cyan"
         ))
@@ -561,36 +526,72 @@ def main_menu():
         console.print(Panel(stats, title="Quick Stats", box=box.ROUNDED))
         console.print()
 
-        # Menu options
-        console.print("[bold]Main Menu:[/]")
-        console.print("  [1] System Information")
-        console.print("  [2] Tool Status")
-        console.print("  [3] Model Management")
-        console.print("  [4] Storage Breakdown")
-        console.print("  [5] Launch Tool")
-        console.print("  [0] Exit")
-        console.print()
+        # Get available launchers
+        launchers = sorted(SCRIPTS_DIR.glob("launch-*.sh"))
 
-        choice = Prompt.ask("Select option", default="0")
+        if not launchers:
+            console.print("[red]No launchers found![/]")
+            console.print("[yellow]Install AI tools to use this hub.[/]")
+            console.print()
+            console.print("  [s] System & Storage Info")
+            console.print("  [m] Model Management")
+            console.print("  [0] Exit")
+        else:
+            # Show tools directly
+            console.print("[bold]🚀 Launch AI Tool:[/]")
+            for idx, launcher in enumerate(launchers, 1):
+                tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
+                console.print(f"  [{idx}] {tool_name}")
+
+            console.print()
+            console.print("[bold]📊 Management:[/]")
+            console.print("  [s] System & Storage Info")
+            console.print("  [m] Model Management")
+            console.print("  [0] Exit")
+
+        console.print()
+        choice = Prompt.ask("Select option", default="0").lower()
 
         if choice == "0":
             console.print("\n[cyan]Goodbye![/]")
             break
-        elif choice == "1":
-            display_system_info()
-            Prompt.ask("\nPress Enter to continue")
-        elif choice == "2":
-            display_tool_status()
-            Prompt.ask("\nPress Enter to continue")
-        elif choice == "3":
+        elif choice == "s":
+            storage_and_system_menu()
+        elif choice == "m":
             model_management_menu()
-        elif choice == "4":
-            display_storage()
-            Prompt.ask("\nPress Enter to continue")
-        elif choice == "5":
-            launch_tool_menu()
         else:
-            console.print("[red]Invalid option![/]")
+            # Try to parse as number for tool launch
+            try:
+                choice_idx = int(choice)
+                if 1 <= choice_idx <= len(launchers):
+                    launcher = launchers[choice_idx - 1]
+                    tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
+
+                    console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+                    console.print(f"[green]Launching {tool_name}...[/]")
+                    console.print(f"[dim]Workspace: {AI_HUB}/workspaces/{launcher.stem.replace('launch-', '')}[/]")
+                    console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]\n")
+
+                    console.print("[yellow]TUI will resume when you exit the tool.[/]\n")
+
+                    # Run the launcher and wait for it to complete
+                    result = subprocess.run([str(launcher)], cwd=str(launcher.parent))
+
+                    # Show completion message
+                    console.print(f"\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+                    if result.returncode == 0:
+                        console.print(f"[green]✓ {tool_name} exited successfully[/]")
+                    else:
+                        console.print(f"[yellow]⚠ {tool_name} exited with code {result.returncode}[/]")
+                    console.print(f"[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]")
+
+                    Prompt.ask("\nPress Enter to return to menu")
+                else:
+                    console.print("[red]Invalid option![/]")
+                    Prompt.ask("\nPress Enter to continue")
+            except ValueError:
+                console.print("[red]Invalid option![/]")
+                Prompt.ask("\nPress Enter to continue")
 
 
 if __name__ == "__main__":
