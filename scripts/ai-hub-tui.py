@@ -828,46 +828,38 @@ def main_menu():
         ))
         console.print()
 
-        # Create layout with ASCII art in center and info panel on right
+        # Display tool list with ASCII art overlay and info panel on right
         from rich.columns import Columns
-
-        # Build tool list for left
-        tool_list_text = f"[bold {THEME['accent']}]🚀 AI Tools[/]\n\n"
-        for idx, launcher in enumerate(launchers):
-            tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
-            if idx == selected:
-                tool_list_text += f"[bold {THEME['success']}]▶ {tool_name}[/]\n"
-            else:
-                tool_list_text += f"[{THEME['muted']}]  {tool_name}[/]\n"
 
         # Get selected tool info
         selected_launcher = launchers[selected]
         selected_tool_name = selected_launcher.stem.replace("launch-", "").replace("-", " ").title()
         selected_tool_key = selected_launcher.stem.replace("launch-", "")
 
-        # ASCII art in center
-        ascii_text = ""
+        # Build tool list with ASCII art overlay
+        console.print(f"[bold {THEME['accent']}]🚀 Select AI Tool to Launch:[/]")
+        console.print()
+
+        # Show ASCII art for selected tool (overlays on list)
         if selected_tool_key in TOOL_ASCII_ART:
-            ascii_text = TOOL_ASCII_ART[selected_tool_key]
+            console.print(TOOL_ASCII_ART[selected_tool_key])
 
-        # Build info panel for right
-        info_text = f"[bold {THEME['accent']}]{selected_tool_name}[/]\n\n"
+        # Show tool list
+        for idx, launcher in enumerate(launchers):
+            tool_name = launcher.stem.replace("launch-", "").replace("-", " ").title()
+            if idx == selected:
+                console.print(f"  [bold {THEME['success']}]▶ {tool_name}[/]")
+            else:
+                console.print(f"  [{THEME['muted']}]  {tool_name}[/]")
+
+        console.print()
+
+        # Show info in a compact line or small panel
         workspace = WORKSPACES_DIR / selected_tool_key
+        info_line = f"[{THEME['muted']}]{selected_tool_name}[/]"
         if workspace.exists():
-            info_text += f"[{THEME['muted']}]Workspace:[/]\n{workspace}\n\n"
-            # Check for recent files/activity
-            recent_files = list(workspace.glob("*"))[:3] if workspace.exists() else []
-            if recent_files:
-                info_text += f"[{THEME['muted']}]Recent:[/]\n"
-                for f in recent_files:
-                    info_text += f"  {f.name}\n"
-
-        # Display in columns: tool list (narrow), ASCII (wide), info (medium)
-        tool_panel = Panel(tool_list_text, border_style=THEME['border'], width=25)
-        ascii_panel = Panel(ascii_text, border_style=THEME['border'], expand=True)
-        info_panel = Panel(info_text, border_style=THEME['border'], width=40)
-
-        console.print(Columns([tool_panel, ascii_panel, info_panel], expand=True))
+            info_line += f" [{THEME['muted']}]• {workspace}[/]"
+        console.print(info_line)
 
         console.print()
         console.print(f"[{THEME['muted']}]Navigation: [{THEME['primary']}]↑/k[/] up • [{THEME['primary']}]↓/j[/] down • [{THEME['primary']}]Enter[/] launch • [{THEME['warning']}]s[/]=System • [{THEME['warning']}]m[/]=Models • [{THEME['warning']}]t[/]=Theme • [{THEME['error']}]q[/]=Quit[/]")
