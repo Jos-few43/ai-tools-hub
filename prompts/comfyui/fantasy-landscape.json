@@ -1,0 +1,20 @@
+{
+  "name": "fantasy-landscape",
+  "positive": "fantasy landscape, magical forest, floating islands, waterfalls, mystical atmosphere, ethereal glow, ancient trees, fantasy architecture, epic vista, golden hour lighting, volumetric rays, highly detailed, concept art, matte painting style",
+  "negative": "blurry, low quality, modern buildings, cars, people, text, watermark, signature, jpeg artifacts, amateur",
+  "tags": [
+    "landscape",
+    "fantasy",
+    "forest",
+    "magical"
+  ],
+  "category": "landscape",
+  "settings": {
+    "steps": 35,
+    "cfg": 8.0,
+    "sampler": "DPM++ SDE Karras"
+  },
+  "notes": "Great for fantasy and concept art styles",
+  "created": "2026-01-01T00:00:00",
+  "modified": "2026-01-01T00:00:00"
+}

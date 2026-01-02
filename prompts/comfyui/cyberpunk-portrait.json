@@ -1,0 +1,20 @@
+{
+  "name": "cyberpunk-portrait",
+  "positive": "cyberpunk woman, neon lights, futuristic city background, rain, reflections, night scene, detailed face, glowing eyes, tech implants, holographic displays, dramatic lighting, 8k, ultra detailed, masterpiece, photorealistic",
+  "negative": "blurry, low quality, distorted, disfigured, bad anatomy, bad hands, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, jpeg artifacts, watermark, signature, text",
+  "tags": [
+    "portrait",
+    "cyberpunk",
+    "neon",
+    "futuristic"
+  ],
+  "category": "portrait",
+  "settings": {
+    "steps": 30,
+    "cfg": 7.5,
+    "sampler": "DPM++ 2M Karras"
+  },
+  "notes": "Works best with SDXL or realistic models",
+  "created": "2026-01-01T00:00:00",
+  "modified": "2026-01-01T00:00:00"
+}

@@ -1,0 +1,4 @@
+#!/bin/bash
+# Prompt Library - Quick CLI launcher
+
+exec python3 "$HOME/Projects/ai/scripts/prompt-library.py" "$@"

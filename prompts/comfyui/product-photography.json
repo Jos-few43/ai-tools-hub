@@ -1,0 +1,20 @@
+{
+  "name": "product-photography",
+  "positive": "professional product photography, white background, studio lighting, commercial photography, clean, sharp focus, highly detailed, reflections, product shot, centered composition, even lighting, high resolution, catalog photo",
+  "negative": "blurry, cluttered background, poor lighting, shadows, overexposed, underexposed, low quality, amateur, distorted, cropped",
+  "tags": [
+    "product",
+    "photography",
+    "commercial",
+    "studio"
+  ],
+  "category": "product",
+  "settings": {
+    "steps": 30,
+    "cfg": 7.0,
+    "sampler": "DPM++ 2M Karras"
+  },
+  "notes": "Great for product visualization and e-commerce",
+  "created": "2026-01-01T00:00:00",
+  "modified": "2026-01-01T00:00:00"
+}

@@ -790,6 +790,42 @@ def theme_selector_menu():
                 pass
 
 
+def prompt_library_menu():
+    """Prompt Library menu - Browse and manage ComfyUI prompts"""
+    console.clear()
+    console.print(Panel.fit(f"[bold {THEME['primary']}]📚 Prompt Library[/]", style=THEME['primary'], border_style=THEME['border']))
+    console.print()
+
+    console.print("  [1] Browse prompts (TUI)")
+    console.print("  [2] Add new prompt")
+    console.print("  [3] Search prompts")
+    console.print("  [4] View prompt details")
+    console.print("  [5] Export prompt to file")
+    console.print("  [0] Back to main menu")
+    console.print()
+
+    choice = Prompt.ask("Select option", default="0")
+
+    if choice == "1":
+        # Launch the prompt library TUI
+        subprocess.run([sys.executable, str(SCRIPTS_DIR / "prompt-library.py"), "browse"])
+    elif choice == "2":
+        subprocess.run([sys.executable, str(SCRIPTS_DIR / "prompt-library.py"), "add"])
+    elif choice == "3":
+        query = Prompt.ask("Search query")
+        subprocess.run([sys.executable, str(SCRIPTS_DIR / "prompt-library.py"), "list", "--search", query])
+        Prompt.ask("\nPress Enter to continue")
+    elif choice == "4":
+        name = Prompt.ask("Prompt name")
+        subprocess.run([sys.executable, str(SCRIPTS_DIR / "prompt-library.py"), "view", name])
+        Prompt.ask("\nPress Enter to continue")
+    elif choice == "5":
+        name = Prompt.ask("Prompt name")
+        output = Prompt.ask("Output file path", default=f"{Path.home()}/{name}.txt")
+        subprocess.run([sys.executable, str(SCRIPTS_DIR / "prompt-library.py"), "export", name, output])
+        Prompt.ask("\nPress Enter to continue")
+
+
 def main_menu():
     """Main TUI menu - Interactive tool launcher with keyboard navigation"""
     selected = 0
@@ -862,7 +898,7 @@ def main_menu():
         console.print(info_line)
 
         console.print()
-        console.print(f"[{THEME['muted']}]Navigation: [{THEME['primary']}]↑/k[/] up • [{THEME['primary']}]↓/j[/] down • [{THEME['primary']}]Enter[/] launch • [{THEME['warning']}]s[/]=System • [{THEME['warning']}]m[/]=Models • [{THEME['warning']}]t[/]=Theme • [{THEME['error']}]q[/]=Quit[/]")
+        console.print(f"[{THEME['muted']}]Navigation: [{THEME['primary']}]↑/k[/] up • [{THEME['primary']}]↓/j[/] down • [{THEME['primary']}]Enter[/] launch • [{THEME['warning']}]s[/]=System • [{THEME['warning']}]m[/]=Models • [{THEME['warning']}]p[/]=Prompts • [{THEME['warning']}]t[/]=Theme • [{THEME['error']}]q[/]=Quit[/]")
 
         # Handle keyboard input
         key = readchar.readkey()
@@ -901,6 +937,8 @@ def main_menu():
             storage_and_system_menu()
         elif key.lower() == 'm':
             model_management_menu()
+        elif key.lower() == 'p':
+            prompt_library_menu()
         elif key.lower() == 't':
             theme_selector_menu()
         elif key.lower() == 'q':

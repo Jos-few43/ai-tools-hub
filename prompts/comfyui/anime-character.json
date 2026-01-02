@@ -1,0 +1,20 @@
+{
+  "name": "anime-character",
+  "positive": "anime style, beautiful anime girl, detailed eyes, colorful hair, school uniform, cherry blossoms, soft lighting, vibrant colors, high quality, illustration, cel shading, makoto shinkai style, studio ghibli influence, 4k",
+  "negative": "3d, realistic, photorealistic, western cartoon, ugly, bad proportions, bad anatomy, poorly drawn, blurry, cropped, worst quality, low quality",
+  "tags": [
+    "anime",
+    "character",
+    "illustration",
+    "colorful"
+  ],
+  "category": "anime",
+  "settings": {
+    "steps": 25,
+    "cfg": 7.0,
+    "sampler": "Euler a"
+  },
+  "notes": "Works well with anime-specific models",
+  "created": "2026-01-01T00:00:00",
+  "modified": "2026-01-01T00:00:00"
+}
