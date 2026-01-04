@@ -53,6 +53,35 @@ done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "MODELS"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+models_dir="$AI_HUB/models/checkpoints"
+if [ -d "$models_dir" ]; then
+    model_count=$(find "$models_dir" -name "*.safetensors" 2>/dev/null | wc -l)
+    if [ "$model_count" -gt 0 ]; then
+        echo "  Total models: $model_count"
+        total_size=$(du -sh "$models_dir" 2>/dev/null | cut -f1)
+        echo "  Total size: $total_size"
+        echo ""
+        echo "  Recent models:"
+        find "$models_dir" -name "*.safetensors" -type f 2>/dev/null | sort | head -5 | while read model; do
+            name=$(basename "$model")
+            size=$(du -h "$model" 2>/dev/null | cut -f1)
+            echo "    - $name ($size)"
+        done
+        if [ "$model_count" -gt 5 ]; then
+            echo "    ... and $((model_count - 5)) more"
+        fi
+    else
+        echo "  No models found"
+    fi
+else
+    echo "  Models directory not found"
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "SHARED RESOURCES"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
